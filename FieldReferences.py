@@ -2,6 +2,7 @@ import requests
 import streamlit as st
 import os
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.service import Service as FirefoxService
 import time
@@ -160,7 +161,13 @@ def login_with_sid_in_browser(browser, sid, instance_url):
     """
 
     if browser.lower() == "chrome":
-        driver = webdriver.Chrome(service=ChromeService())
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")  # Run in headless mode
+        chrome_options.add_argument("--disable-gpu")  # Disable GPU (optional, for compatibility)
+        chrome_options.add_argument("--no-sandbox")  # Bypass OS security model (Linux systems)
+        chrome_options.add_argument("--disable-dev-shm-usage")  # Address shared memory issues (optional)
+
+        driver = webdriver.Chrome(service=ChromeService(),options=chrome_options)
     elif browser.lower() == "firefox":
         driver = webdriver.Firefox(service=FirefoxService())
     else:
