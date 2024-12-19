@@ -10,11 +10,8 @@ from selenium.webdriver.common.by import By
 from multiprocessing import Pool, Manager
 import constants
 import csv
-from tqdm import tqdm
 import multiprocessing
-from zeep import Client
-from zeep.transports import Transport
-from PIL import Image
+
 
 
 
