@@ -33,8 +33,9 @@ def get_driver():
 
 driver = get_driver()
 # Visit a website
-driver.get("https://www.google.com")
-print(driver.title)
+driver.get("https://www.wikipedia.org/")
+st.write(driver.title)
+st.code(driver.page_source)
 
 # Close the browser
 driver.quit()
