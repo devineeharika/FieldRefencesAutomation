@@ -1,19 +1,41 @@
 import streamlit as st
-
+import time
+import psutil
+import random
+import os
+import sys
+from PIL import Image, ImageDraw, ImageOps
+from PIL.Image import Resampling
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+from os.path import exists
 
-@st.experimental_singleton
+st.set_page_config(page_title="🎈 App Screenshot")
+st.title('🎈 App Screenshot')
+st.warning('An app for taking screenshot of a Streamlit app.')
+
+#@st.cache_resource
 def get_driver():
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    options = webdriver.ChromeOptions()
+    
+    options.add_argument('--disable-gpu')
+    options.add_argument('--headless')
+    options.add_argument(f"--window-size={width}x{height}")
+    
+    service = Service()
+    driver = webdriver.Chrome(service=service, options=options)
+    
+    return webdriver.Chrome(service=service, options=options)
 
-options = Options()
-options.add_argument('--disable-gpu')
-options.add_argument('--headless')
 
 driver = get_driver()
-driver.get('http://example.com')
+# Visit a website
+driver.get("https://www.google.com")
+print(driver.title)
 
-st.code(driver.page_source)
+# Close the browser
+driver.quit()
