@@ -14,6 +14,11 @@ import csv
 import multiprocessing
 
 
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
 
 
 def get_salesforce_sid(username, password, security_token, LOGIN_URL):
@@ -161,13 +166,13 @@ def login_with_sid_in_browser(browser, sid, instance_url):
     """
 
     if browser.lower() == "chrome":
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")  # Run in headless mode
-        chrome_options.add_argument("--disable-gpu")  # Disable GPU (optional, for compatibility)
-        chrome_options.add_argument("--no-sandbox")  # Bypass OS security model (Linux systems)
-        chrome_options.add_argument("--disable-dev-shm-usage")  # Address shared memory issues (optional)
-
-        driver = webdriver.Chrome(service=ChromeService(),options=chrome_options)
+        options = webdriver.ChromeOptions()
+    
+        options.add_argument('--disable-gpu')
+        options.add_argument('--headless')
+        
+        service = Service()
+        driver = webdriver.Chrome(service=service, options=options)
     elif browser.lower() == "firefox":
         driver = webdriver.Firefox(service=FirefoxService())
     else:
@@ -209,6 +214,7 @@ def process_url_chunk_with_progress(instance_url, chunk, file_path, sid, progres
     Process a chunk of URLs, scrape data, and update shared progress in real-time.
     """
     driver = login_with_sid_in_browser("chrome", sid, instance_url)
+    print("started drivers")
     try:
                 
         total_urls = len(chunk)
