@@ -1,5 +1,3 @@
 streamlit
-requests
-selenium
-pandas
-multiprocessing-logging
+seleniumbase
+webdriver-manager
