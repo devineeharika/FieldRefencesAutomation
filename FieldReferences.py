@@ -171,9 +171,9 @@ def login_with_sid_in_browser(browser, sid, instance_url):
     options.add_argument("--disable-dev-shm-usage")
 
     if browser.lower() == "chrome":
-        driver = webdriver.Chrome(service=ChromeService())
+        # driver = webdriver.Chrome(service=ChromeService())
         # Create a new selenium driver
-        # driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+        driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
 
     elif browser.lower() == "firefox":
         driver = webdriver.Firefox(service=FirefoxService())

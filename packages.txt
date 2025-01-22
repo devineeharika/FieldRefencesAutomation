@@ -1,5 +1,0 @@
-wget
-gnupg
-unzip
-google-chrome-stable
-chromedriver
