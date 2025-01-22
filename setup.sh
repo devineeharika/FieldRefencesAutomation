@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Update and install the necessary system dependencies
+apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y $(cat packages.txt) && \
+    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && \
+    wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip && \
+    unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/ && \
+    rm /tmp/chromedriver.zip && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
