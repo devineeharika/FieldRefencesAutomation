@@ -1,4 +1,4 @@
-num_processes = 3
+num_processes = 1
 page_data_file_path = "references.csv"
 first_page_file_path = "details.csv"
 failed_urls_file_path = "failed_urls.csv"

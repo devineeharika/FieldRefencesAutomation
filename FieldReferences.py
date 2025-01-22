@@ -1,8 +1,8 @@
+
 import requests
 import streamlit as st
 import os
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.service import Service as FirefoxService
 import time
@@ -11,10 +11,14 @@ from selenium.webdriver.common.by import By
 from multiprocessing import Pool, Manager
 import constants
 import csv
+from tqdm import tqdm
 import multiprocessing
-
-
-
+from zeep import Client
+from zeep.transports import Transport
+from PIL import Image
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
+import zipfile
 
 def get_salesforce_sid(username, password, security_token, LOGIN_URL):
     """
@@ -159,15 +163,18 @@ def login_with_sid_in_browser(browser, sid, instance_url):
     """
     Log in to Salesforce using the retrieved SID in a browser.
     """
+    # Configure selenium options
+    options = Options()
+    options.add_argument('--headless')  # Run headlessly (no GUI)
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
+    options.add_argument("--disable-dev-shm-usage")
 
     if browser.lower() == "chrome":
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")  # Run in headless mode
-        chrome_options.add_argument("--disable-gpu")  # Disable GPU (optional, for compatibility)
-        chrome_options.add_argument("--no-sandbox")  # Bypass OS security model (Linux systems)
-        chrome_options.add_argument("--disable-dev-shm-usage")  # Address shared memory issues (optional)
+        driver = webdriver.Chrome(service=ChromeService())
+        # Create a new selenium driver
+        # driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
 
-        driver = webdriver.Chrome(service=ChromeService(),options=chrome_options)
     elif browser.lower() == "firefox":
         driver = webdriver.Firefox(service=FirefoxService())
     else:
@@ -183,26 +190,6 @@ def login_with_sid_in_browser(browser, sid, instance_url):
     return driver
 
 
-def empty_dicts():
-    page_data = {
-        "Reference Type": [],
-        "Reference Label": [],
-        "Field Name": [],
-        "Reference Label URL": []
-    }
-    first_page_data = {
-        "Field Label": [],
-        "Object Name": [],
-        "Field Name": [],
-        "API Name": [],
-        "Description": []
-    }
-    failed_urls_data = {
-        "Url": [],
-        "Error": [],
-        "Page": [], #First page(First) or Second page(Second).
-    }
-    return page_data,first_page_data,failed_urls_data
 
 def process_url_chunk_with_progress(instance_url, chunk, file_path, sid, progress_queue, chunk_size):
     """
@@ -213,8 +200,24 @@ def process_url_chunk_with_progress(instance_url, chunk, file_path, sid, progres
                 
         total_urls = len(chunk)
         for index, i in enumerate(chunk):
-            
-            page_data,first_page_data,failed_urls_data = empty_dicts()
+            page_data = {
+                "Reference Type": [],
+                "Reference Label": [],
+                "Field Name": [],
+                "Reference Label URL": []
+            }
+            first_page_data = {
+                "Field Label": [],
+                "Object Name": [],
+                "Field Name": [],
+                "API Name": [],
+                "Description": []
+            }
+            failed_urls_data = {
+                "Url": [],
+                "Error": [],
+                "Page": [], #First page(First) or Second page(Second).
+            }
             
             # Simulate processing time
             time.sleep(1)
@@ -227,7 +230,6 @@ def process_url_chunk_with_progress(instance_url, chunk, file_path, sid, progres
             time.sleep(10)
             
             get_first_page_details(driver, page_url, first_page_data, failed_urls_data)
-            page_data,first_page_data,failed_urls_data = empty_dicts()
             time.sleep(2)
             process_url(driver, page_url, page_data, dataframe['QualifiedApiName'][i], failed_urls_data)
             
@@ -305,7 +307,31 @@ def get_details_with_multiprocessing_and_progress(instance_url, file_path, num_p
         pool.join()
 
 
-  
+def download_files(): 
+    try: 
+        output1 = constants.page_data_file_path 
+        output2 = constants.first_page_file_path
+        output3 = constants.failed_urls_file_path 
+        
+        # Create a zip file containing both output files
+        zip_filename = "/tmp/output_files.zip"
+        with zipfile.ZipFile(zip_filename, 'w') as zipf:
+            if os.path.exists(output1):
+               zipf.write(output1, os.path.basename(output1))
+            if os.path.exists(output2):
+               zipf.write(output2, os.path.basename(output2))
+            if os.path.exists(output3):
+                zipf.write(output3, os.path.basename(output3))
+        # Provide a single download button for the zip file
+        with open(zip_filename, "rb") as zip_file:
+            st.download_button(
+                label="Download Output Files",
+                data=zip_file,
+                file_name="output_files.zip",
+                mime="application/zip"
+            ) 
+    except Exception as e:
+        st.write("Download Failed")
 
 # Main function to log in and open Salesforce in a browser
 def main():
@@ -364,12 +390,6 @@ def main():
             if sid:
                 print("Successfully retrieved SID:", sid)
                 print("Instance URL:", instance_url)
-                
-                # Use SID to log in via browser
-                # driver = login_with_sid_in_browser("chrome", sid, instance_url)
-                # time.sleep(10000)
-                # get_first_page_details(driver, instance_url, file_path)
-                # get_details_from_url(instance_url, file_path, driver)
                 num_processes = constants.num_processes  # Adjust the number of processes based on your system
                 start_time = time.time()  
                 get_details_with_multiprocessing_and_progress(instance_url, file_path, num_processes, sid)
@@ -377,13 +397,14 @@ def main():
                 st.success("Successfully Extracted data and stored in CSV files.")
                 # Calculate elapsed time in minutes
                 elapsed_time_minutes = (end_time - start_time) / 60
+                # driver = login_with_sid_in_browser("chrome", sid, instance_url)
+                # time.sleep(1000)
                 st.write(f"**Total time taken:** {elapsed_time_minutes:.2f} minutes.")
-                
+                download_files()
             else:
                 print("Failed to retrieve SID.")
         else:
             st.error("Please fill in all fields and upload a file.")
-
     # Footer
     st.markdown(
         """
